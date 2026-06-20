@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}О проекте — FoodVision{% endblock %}
+{% block content %}
+<h1>О проекте</h1>
+<p class="subtitle">Вариант 4 — Классификация блюд по фотографии</p>
+
+<div class="card">
+  <h2>Цель</h2>
+  <p>Разработать систему компьютерного зрения для определения категории блюда по изображению с выводом top-3 наиболее вероятных классов, сравнением 5 архитектур CNN и демонстрационным веб-модулем.</p>
+</div>
+
+<div class="card">
+  <h2>Данные</h2>
+  <table>
+    <tr><td>Датасет</td><td><strong>Food-101</strong> (Bossard et al.) — подмножество 20 классов</td></tr>
+    <tr><td>Тип разметки</td><td>Классовая (одна метка на изображение)</td></tr>
+    <tr><td>Объём</td><td>20 000 изображений (1000 на класс в полном Food-101)</td></tr>
+    <tr><td>Разбиение</td><td>70% train / 15% validation / 15% test</td></tr>
+    <tr><td>Ограничения</td><td>Только исследовательское использование; не для медицинских/коммерческих целей без дообучения</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h2>Архитектуры (5 разных семейств)</h2>
+  <ol>
+    <li><strong>ResNet-18</strong> — остаточные связи, глубина 18 слоёв</li>
+    <li><strong>ResNet-50</strong> — углублённая residual-сеть</li>
+    <li><strong>MobileNetV3-Small</strong> — лёгкая мобильная архитектура</li>
+    <li><strong>EfficientNet-B0</strong> — compound scaling (лучшая модель)</li>
+    <li><strong>DenseNet-121</strong> — плотные связи между слоями</li>
+  </ol>
+</div>
+
+<div class="card">
+  <h2>Метрики</h2>
+  <p>Accuracy, Precision, Recall, F1-score, Confusion Matrix — см. разделы «Архитектуры» и «Confusion Matrix».</p>
+</div>
+
+<div class="card">
+  <h2>Технологии</h2>
+  <p>Python 3, Flask, PyTorch, torchvision, SQLite, openpyxl, reportlab</p>
+</div>
+
+<div class="card">
+  <h2>Запуск</h2>
+  <pre style="background:#f3efe9;padding:1rem;border-radius:8px;font-size:0.9rem">pip install -r requirements.txt
+python run.py</pre>
+  <p style="margin-top:0.5rem">Откройте <strong>http://127.0.0.1:5000</strong></p>
+</div>
+{% endblock %}

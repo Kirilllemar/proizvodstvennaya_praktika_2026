@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Confusion Matrix — FoodVision{% endblock %}
+{% block content %}
+<h1>Confusion Matrix</h1>
+<p class="subtitle">Модель: {{ data.model }} · {{ data.note }}</p>
+
+<div class="card" style="overflow-x:auto">
+  <table class="confusion-table">
+    <tr>
+      <th>Факт \ Прогноз</th>
+      {% for label in data.labels %}
+      <th>{{ label }}</th>
+      {% endfor %}
+    </tr>
+    {% for i in range(data.labels|length) %}
+    <tr>
+      <th>{{ data.labels[i] }}</th>
+      {% for j in range(data.labels|length) %}
+      <td {% if i == j %}class="diag"{% endif %}>{{ data.matrix[i][j] }}</td>
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="card">
+  <h2>Интерпретация</h2>
+  <p>Диагональ (зелёная) — правильные предсказания. Наибольшие ошибки вне диагонали указывают на пары похожих блюд.</p>
+  <p style="margin-top:0.5rem">Типичные путаницы: спагетти/паста, суши/морепродукты, бургер/сэндвич — из-за схожей визуальной текстуры и цвета.</p>
+</div>
+{% endblock %}

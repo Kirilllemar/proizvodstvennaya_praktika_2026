@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Главная — FoodVision{% endblock %}
+{% block content %}
+<h1>Распознавание блюда по фотографии</h1>
+<p class="subtitle">Вариант 4 · Сравнение 5 архитектур CNN · Демо-модуль с top-3 предсказаниями</p>
+
+<div class="grid">
+  <div class="card stat-card">
+    <div class="value">{{ stats.total }}</div>
+    <div class="label">Распознаваний</div>
+  </div>
+  <div class="card stat-card">
+    <div class="value">{{ (stats.avg_confidence * 100)|int }}%</div>
+    <div class="label">Средняя уверенность</div>
+  </div>
+  <div class="card stat-card">
+    <div class="value">{{ stats.avg_inference_ms }} мс</div>
+    <div class="label">Среднее время</div>
+  </div>
+  <div class="card stat-card">
+    <div class="value">{{ (best_model.accuracy * 100)|int }}%</div>
+    <div class="label">Accuracy лучшей модели</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Лучшая модель: {{ best_model.name }}</h2>
+  <p>F1-score: <strong>{{ best_model.f1 }}</strong> · Инференс: <strong>{{ best_model.inference_ms }} мс</strong> · Размер: <strong>{{ best_model.model_size_mb }} МБ</strong></p>
+  <p style="margin-top:0.5rem;color:var(--muted)">{{ best_model.pros }}</p>
+  <div class="actions">
+    <a href="{{ url_for('main.recognize') }}" class="btn btn-primary">Загрузить фото блюда</a>
+    <a href="{{ url_for('main.compare') }}" class="btn btn-outline">Таблица сравнения</a>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Этапы практики (выполнено в проекте)</h2>
+  <table>
+    <tr><th>Этап</th><th>Реализация</th></tr>
+    <tr><td>1. Постановка задачи</td><td>Классификация блюд, top-3, анализ похожих классов</td></tr>
+    <tr><td>2. Данные</td><td>Food-101 (20 классов), train/val/test — см. «О проекте»</td></tr>
+    <tr><td>3. Подготовка данных</td><td>Аугментация, нормализация, split 70/15/15</td></tr>
+    <tr><td>4. 5 архитектур</td><td>ResNet-18/50, MobileNetV3, EfficientNet-B0, DenseNet-121</td></tr>
+    <tr><td>5. Сравнение</td><td>Accuracy, Precision, Recall, F1, время, размер</td></tr>
+    <tr><td>6. Демо-модуль</td><td>Веб-приложение с загрузкой фото и визуализацией</td></tr>
+    <tr><td>7. Статистика</td><td>SQLite + экспорт JSON / Excel / PDF</td></tr>
+    <tr><td>8. Отчёт</td><td>Confusion matrix, анализ ошибок, примеры</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h2>Экспорт отчётов</h2>
+  <div class="actions">
+    <a href="{{ url_for('main.export_pdf') }}" class="btn btn-secondary">Скачать PDF</a>
+    <a href="{{ url_for('main.export_excel') }}" class="btn btn-secondary">Скачать Excel</a>
+    <a href="{{ url_for('main.export_json') }}" class="btn btn-outline">История (JSON)</a>
+  </div>
+</div>
+{% endblock %}

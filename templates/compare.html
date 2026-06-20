@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Сравнение архитектур — FoodVision{% endblock %}
+{% block content %}
+<h1>Сравнение 5 архитектур</h1>
+<p class="subtitle">Экспериментальное сравнение на датасете {{ experiments.dataset.name }}</p>
+
+<div class="card">
+  <h2>Параметры датасета</h2>
+  <table>
+    <tr><td>Объём</td><td>{{ experiments.dataset.total_images }} изображений</td></tr>
+    <tr><td>Train / Val / Test</td><td>{{ experiments.dataset.train }} / {{ experiments.dataset.validation }} / {{ experiments.dataset.test }}</td></tr>
+    <tr><td>Классов</td><td>{{ experiments.dataset.num_classes }}</td></tr>
+    <tr><td>Размер входа</td><td>{{ experiments.dataset.input_size }}×{{ experiments.dataset.input_size }}</td></tr>
+    <tr><td>Аугментация</td><td>{{ experiments.dataset.augmentation }}</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h2>Таблица сравнения</h2>
+  <table>
+    <tr>
+      <th>Архитектура</th>
+      <th>Семейство</th>
+      <th>Accuracy</th>
+      <th>Precision</th>
+      <th>Recall</th>
+      <th>F1</th>
+      <th>Инференс (мс)</th>
+      <th>Размер (МБ)</th>
+      <th>Эпохи</th>
+    </tr>
+    {% for arch in experiments.architectures %}
+    <tr {% if arch.id == experiments.best_model %}class="best"{% endif %}>
+      <td>{{ arch.name }}{% if arch.id == experiments.best_model %} ★{% endif %}</td>
+      <td>{{ arch.family }}</td>
+      <td>{{ arch.accuracy }}</td>
+      <td>{{ arch.precision }}</td>
+      <td>{{ arch.recall }}</td>
+      <td>{{ arch.f1 }}</td>
+      <td>{{ arch.inference_ms }}</td>
+      <td>{{ arch.model_size_mb }}</td>
+      <td>{{ arch.epochs }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="card">
+  <h2>Сильные и слабые стороны</h2>
+  {% for arch in experiments.architectures %}
+  <div style="margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border)">
+    <strong>{{ arch.name }}</strong>
+    <p style="color:var(--success)">+ {{ arch.pros }}</p>
+    <p style="color:var(--error)">− {{ arch.cons }}</p>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <h2>Вывод</h2>
+  <p>
+    <strong>EfficientNet-B0</strong> выбрана как лучшая модель: наивысший F1 ({{ experiments.architectures[3].f1 }})
+    при приемлемом времени инференса ({{ experiments.architectures[3].inference_ms }} мс).
+    MobileNetV3-Small — для мобильного развёртывания. ResNet-50 — при приоритете точности над скоростью.
+  </p>
+</div>
+{% endblock %}

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Распознавание блюд{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <nav>
+    <div class="brand">🍽 FoodVision — Вариант 4</div>
+    <ul>
+      <li><a href="{{ url_for('main.index') }}">Главная</a></li>
+      <li><a href="{{ url_for('main.recognize') }}">Распознать</a></li>
+      <li><a href="{{ url_for('main.compare') }}">Архитектуры</a></li>
+      <li><a href="{{ url_for('main.confusion') }}">Confusion Matrix</a></li>
+      <li><a href="{{ url_for('main.history') }}">История</a></li>
+      <li><a href="{{ url_for('main.about') }}">О проекте</a></li>
+    </ul>
+  </nav>
+
+  <div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </div>
+
+  <footer>
+    Производственная практика 2026 · Классификация блюд · 5 архитектур CNN
+  </footer>
+</body>
+</html>

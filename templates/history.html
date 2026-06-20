@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}История — FoodVision{% endblock %}
+{% block content %}
+<h1>История распознаваний</h1>
+<p class="subtitle">Сохранение в SQLite · экспорт в JSON</p>
+
+<div class="grid">
+  <div class="card stat-card">
+    <div class="value">{{ stats.total }}</div>
+    <div class="label">Всего записей</div>
+  </div>
+  {% for item in stats.top_classes[:3] %}
+  <div class="card stat-card">
+    <div class="value">{{ item.count }}</div>
+    <div class="label">{{ item.class }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <div class="actions" style="margin-bottom:1rem">
+    <a href="{{ url_for('main.export_json') }}" class="btn btn-outline">Экспорт JSON</a>
+    <a href="{{ url_for('main.export_excel') }}" class="btn btn-outline">Экспорт Excel</a>
+  </div>
+
+  {% if items %}
+  <table>
+    <tr>
+      <th>#</th>
+      <th>Фото</th>
+      <th>Класс</th>
+      <th>Уверенность</th>
+      <th>Модель</th>
+      <th>Время</th>
+      <th>Дата</th>
+    </tr>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.id }}</td>
+      <td><img src="{{ url_for('static', filename='uploads/' + item.filename) }}" width="48" height="48" style="object-fit:cover;border-radius:6px" alt=""></td>
+      <td>{{ item.top1_class }}</td>
+      <td>{{ (item.top1_confidence * 100)|round(1) }}%</td>
+      <td>{{ item.model_id }}</td>
+      <td>{{ item.inference_ms }} мс</td>
+      <td>{{ item.created_at }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p style="color:var(--muted)">Пока нет записей. <a href="{{ url_for('main.recognize') }}">Загрузите первое фото</a>.</p>
+  {% endif %}
+</div>
+{% endblock %}

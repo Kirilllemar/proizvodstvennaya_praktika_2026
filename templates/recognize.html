@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Распознать — FoodVision{% endblock %}
+{% block content %}
+<h1>Распознавание блюда</h1>
+<p class="subtitle">Загрузите фото — получите top-3 класса с уверенностью модели</p>
+
+<div class="card">
+  <form method="post" enctype="multipart/form-data">
+    <div class="upload-zone">
+      <p>Выберите изображение блюда</p>
+      <input type="file" name="image" accept="image/*" required>
+    </div>
+
+    <div class="form-group">
+      <label for="model_id">Модель для инференса</label>
+      <select name="model_id" id="model_id">
+        {% for arch in experiments.architectures %}
+        <option value="{{ arch.id }}" {% if arch.id == experiments.best_model %}selected{% endif %}>
+          {{ arch.name }}{% if arch.id == experiments.best_model %} (лучшая){% endif %}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>
+        <input type="checkbox" name="compare_all"> Сравнить все 5 моделей на одном изображении
+      </label>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Распознать</button>
+  </form>
+</div>
+
+{% if result %}
+<div class="card">
+  <h2>Результат</h2>
+  <div style="display:flex;gap:2rem;flex-wrap:wrap;align-items:flex-start">
+    <img class="result-image" src="{{ url_for('static', filename='uploads/' + uploaded_name) }}" alt="Загруженное фото">
+    <div style="flex:1;min-width:240px">
+      <p><span class="tag">{{ result.model_id }}</span> · {{ result.inference_ms }} мс</p>
+      <h2 style="margin-top:1rem">Top-3 предсказания</h2>
+      {% for pred in result.top3 %}
+      <div class="prediction-bar">
+        <div class="label-row">
+          <span>{{ loop.index }}. {{ pred.class }}</span>
+          <span>{{ (pred.confidence * 100)|round(1) }}%</span>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:{{ (pred.confidence * 100)|round(1) }}%"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if compare_result %}
+<div class="card">
+  <h2>Сравнение всех моделей</h2>
+  <img class="result-image" src="{{ url_for('static', filename='uploads/' + uploaded_name) }}" alt="Фото" style="margin-bottom:1rem">
+  <table>
+    <tr>
+      <th>Модель</th>
+      <th>Top-1</th>
+      <th>Уверенность</th>
+      <th>Время (мс)</th>
+    </tr>
+    {% for item in compare_result %}
+    <tr {% if item.model_id == experiments.best_model %}class="best"{% endif %}>
+      <td>{{ item.model_name }}</td>
+      <td>{{ item.top3[0].class }}</td>
+      <td>{{ (item.top3[0].confidence * 100)|round(1) }}%</td>
+      <td>{{ item.inference_ms }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+{% endblock %}

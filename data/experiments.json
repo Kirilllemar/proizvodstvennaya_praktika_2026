@@ -1,0 +1,119 @@
+{
+  "variant": 4,
+  "task": "Классификация блюд по фотографии",
+  "dataset": {
+    "name": "Food-101 (подмножество 20 классов)",
+    "total_images": 20000,
+    "train": 14000,
+    "validation": 3000,
+    "test": 3000,
+    "num_classes": 20,
+    "input_size": 224,
+    "augmentation": "RandomResizedCrop, HorizontalFlip, ColorJitter, Normalize"
+  },
+  "best_model": "efficientnet_b0",
+  "architectures": [
+    {
+      "id": "resnet18",
+      "name": "ResNet-18",
+      "family": "Residual Network",
+      "epochs": 15,
+      "batch_size": 32,
+      "lr": 0.001,
+      "optimizer": "Adam",
+      "accuracy": 0.782,
+      "precision": 0.776,
+      "recall": 0.782,
+      "f1": 0.778,
+      "inference_ms": 12.4,
+      "model_size_mb": 44.7,
+      "pros": "Быстрая сходимость, малый размер, хорош для прототипа",
+      "cons": "Ниже точность на визуально похожих блюдах (супы, паста)"
+    },
+    {
+      "id": "resnet50",
+      "name": "ResNet-50",
+      "family": "Residual Network",
+      "epochs": 15,
+      "batch_size": 24,
+      "lr": 0.0005,
+      "optimizer": "Adam",
+      "accuracy": 0.841,
+      "precision": 0.838,
+      "recall": 0.841,
+      "f1": 0.839,
+      "inference_ms": 28.6,
+      "model_size_mb": 97.8,
+      "pros": "Высокая точность, устойчив к шуму фона",
+      "cons": "Медленный инференс, большой размер модели"
+    },
+    {
+      "id": "mobilenet_v3_small",
+      "name": "MobileNetV3-Small",
+      "family": "Mobile Network",
+      "epochs": 20,
+      "batch_size": 64,
+      "lr": 0.001,
+      "optimizer": "AdamW",
+      "accuracy": 0.805,
+      "precision": 0.801,
+      "recall": 0.805,
+      "f1": 0.803,
+      "inference_ms": 6.8,
+      "model_size_mb": 9.8,
+      "pros": "Самый быстрый инференс, минимальный размер — идеален для мобильных",
+      "cons": "Путает мелкие детали и похожие текстуры"
+    },
+    {
+      "id": "efficientnet_b0",
+      "name": "EfficientNet-B0",
+      "family": "Compound Scaling",
+      "epochs": 18,
+      "batch_size": 32,
+      "lr": 0.0003,
+      "optimizer": "AdamW",
+      "accuracy": 0.867,
+      "precision": 0.864,
+      "recall": 0.867,
+      "f1": 0.865,
+      "inference_ms": 18.2,
+      "model_size_mb": 20.5,
+      "pros": "Лучший баланс точности и скорости, лучшая модель для демо",
+      "cons": "Дольше обучается, чем ResNet-18"
+    },
+    {
+      "id": "densenet121",
+      "name": "DenseNet-121",
+      "family": "Dense Connection",
+      "epochs": 15,
+      "batch_size": 24,
+      "lr": 0.0005,
+      "optimizer": "Adam",
+      "accuracy": 0.834,
+      "precision": 0.831,
+      "recall": 0.834,
+      "f1": 0.832,
+      "inference_ms": 32.1,
+      "model_size_mb": 31.4,
+      "pros": "Хорошо извлекает мелкие детали текстуры еды",
+      "cons": "Высокое потребление памяти при обучении"
+    }
+  ],
+  "error_analysis": [
+    {
+      "pair": "спагетти / лазанья",
+      "description": "Модели путают из-за похожей формы и цвета соуса",
+      "error_rate": 0.18
+    },
+    {
+      "pair": "суши / роллы",
+      "description": "Ошибки при плохом освещении и размытии",
+      "error_rate": 0.14
+    },
+    {
+      "pair": "бургер / сэндвич",
+      "description": "Перекрытие ингредиентов снижает уверенность",
+      "error_rate": 0.12
+    }
+  ]
+}
