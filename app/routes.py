@@ -12,7 +12,7 @@ from flask import (
 )
 
 from app.config import ALLOWED_EXTENSIONS, UPLOAD_DIR
-from app.database import get_history, get_statistics, save_prediction
+from app.database import clear_history, delete_prediction, get_history, get_statistics, save_prediction
 from app.models import (
     compare_all_models,
     get_model_name,
@@ -28,6 +28,14 @@ bp = Blueprint("main", __name__)
 
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def _remove_upload(filename):
+    if not filename:
+        return
+    path = os.path.join(UPLOAD_DIR, filename)
+    if os.path.isfile(path):
+        os.remove(path)
 
 
 @bp.route("/")
@@ -119,6 +127,26 @@ def history():
     items = get_history()
     stats = get_statistics()
     return render_template("history.html", items=items, stats=stats)
+
+
+@bp.route("/history/delete/<int:record_id>", methods=["POST"])
+def history_delete(record_id):
+    deleted, filename = delete_prediction(record_id)
+    if not deleted:
+        flash("Запись не найдена", "error")
+    else:
+        _remove_upload(filename)
+        flash("Запись удалена", "success")
+    return redirect(url_for("main.history"))
+
+
+@bp.route("/history/clear", methods=["POST"])
+def history_clear():
+    filenames = clear_history()
+    for filename in filenames:
+        _remove_upload(filename)
+    flash("История очищена", "success")
+    return redirect(url_for("main.history"))
 
 
 @bp.route("/about")

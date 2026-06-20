@@ -86,3 +86,31 @@ def get_statistics():
 def export_history_json():
     history = get_history(limit=1000)
     return json.dumps(history, ensure_ascii=False, indent=2)
+
+
+def delete_prediction(record_id):
+    """Удалить запись. Возвращает (удалено, имя_файла_для_удаления)."""
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT filename FROM predictions WHERE id = ?", (record_id,)
+        ).fetchone()
+        if not row:
+            return False, None
+        filename = row["filename"]
+        conn.execute("DELETE FROM predictions WHERE id = ?", (record_id,))
+        remaining = conn.execute(
+            "SELECT COUNT(*) FROM predictions WHERE filename = ?", (filename,)
+        ).fetchone()[0]
+        conn.commit()
+    file_to_remove = filename if remaining == 0 else None
+    return True, file_to_remove
+
+
+def clear_history():
+    """Удалить всю историю. Возвращает список файлов загрузок для очистки."""
+    with get_connection() as conn:
+        rows = conn.execute("SELECT DISTINCT filename FROM predictions").fetchall()
+        filenames = [row["filename"] for row in rows]
+        conn.execute("DELETE FROM predictions")
+        conn.commit()
+    return filenames

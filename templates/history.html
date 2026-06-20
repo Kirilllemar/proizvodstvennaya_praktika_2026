@@ -2,7 +2,7 @@
 {% block title %}История — FoodVision{% endblock %}
 {% block content %}
 <h1>История распознаваний</h1>
-<p class="subtitle">Сохранение в SQLite · экспорт в JSON</p>
+<p class="subtitle">Сохранение в SQLite · экспорт · удаление записей</p>
 
 <div class="grid">
   <div class="card stat-card">
@@ -21,6 +21,12 @@
   <div class="actions" style="margin-bottom:1rem">
     <a href="{{ url_for('main.export_json') }}" class="btn btn-outline">Экспорт JSON</a>
     <a href="{{ url_for('main.export_excel') }}" class="btn btn-outline">Экспорт Excel</a>
+    {% if items %}
+    <form method="post" action="{{ url_for('main.history_clear') }}"
+          onsubmit="return confirm('Удалить всю историю и загруженные фото?');">
+      <button type="submit" class="btn btn-danger">Очистить историю</button>
+    </form>
+    {% endif %}
   </div>
 
   {% if items %}
@@ -33,6 +39,7 @@
       <th>Модель</th>
       <th>Время</th>
       <th>Дата</th>
+      <th></th>
     </tr>
     {% for item in items %}
     <tr>
@@ -43,6 +50,12 @@
       <td>{{ item.model_id|model_name }}</td>
       <td>{{ item.inference_ms }} мс</td>
       <td>{{ item.created_at }}</td>
+      <td>
+        <form method="post" action="{{ url_for('main.history_delete', record_id=item.id) }}"
+              onsubmit="return confirm('Удалить запись #{{ item.id }}?');">
+          <button type="submit" class="btn btn-danger btn-sm">Удалить</button>
+        </form>
+      </td>
     </tr>
     {% endfor %}
   </table>

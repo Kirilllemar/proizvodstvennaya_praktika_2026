@@ -83,6 +83,7 @@ FOODVISION_PORT=8080 python run.py
 | Поиск нескольких блюд (сетка 3×3) | `/recognize` (чекбокс) |
 | PDF с кириллицей | `static/fonts/DejaVuSans.ttf` |
 | История запусков | SQLite, `/history` |
+| Удаление истории | `/history` — по записи или полная очистка |
 | Экспорт JSON / Excel / PDF | Кнопки на главной и в истории |
 | Анализ ошибок | `/compare`, `/confusion` |
 

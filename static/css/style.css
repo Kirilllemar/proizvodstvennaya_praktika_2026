@@ -134,6 +134,20 @@ tr.best { background: #eef5ec; font-weight: 600; }
 }
 
 .flash.error { background: #fde8e8; color: var(--error); }
+.flash.success { background: #e8f5ea; color: var(--success); }
+
+.btn-danger {
+  background: var(--error);
+  color: white;
+  border: none;
+}
+
+.btn-danger:hover { background: #962e2e; }
+
+.btn-sm {
+  padding: 0.35rem 0.65rem;
+  font-size: 0.85rem;
+}
 
 .upload-zone {
   border: 2px dashed var(--border);
