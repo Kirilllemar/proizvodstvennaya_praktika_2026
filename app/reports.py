@@ -8,11 +8,43 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from app.config import BASE_DIR
 from app.database import get_history, get_statistics
 from app.models import load_confusion_matrix, load_experiments
+
+
+def _register_cyrillic_font():
+    """
+    Регистрирует шрифт с поддержкой кириллицы.
+    Возвращает имя зарегистрированного шрифта для reportlab.
+    """
+    candidates = [
+        # Проектные файлы (если пользователь добавит свой шрифт)
+        os.path.join(BASE_DIR, "static", "fonts", "DejaVuSans.ttf"),
+        os.path.join(BASE_DIR, "static", "fonts", "Arial.ttf"),
+        # Linux
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+        # macOS
+        "/System/Library/Fonts/Supplemental/Arial.ttf",
+        "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
+        "/Library/Fonts/Arial.ttf",
+        # Windows
+        r"C:\Windows\Fonts\arial.ttf",
+        r"C:\Windows\Fonts\DejaVuSans.ttf",
+    ]
+    for path in candidates:
+        if os.path.isfile(path):
+            font_name = "FoodVisionUnicode"
+            if font_name not in pdfmetrics.getRegisteredFontNames():
+                pdfmetrics.registerFont(TTFont(font_name, path))
+            return font_name
+    # Последний fallback: встроенный Helvetica (русский может отображаться некорректно)
+    return "Helvetica"
 
 
 def generate_excel():
@@ -80,13 +112,16 @@ def generate_pdf():
     confusion = load_confusion_matrix()
     stats = get_statistics()
     history = get_history(10)
+    font_name = _register_cyrillic_font()
 
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=2 * cm, leftMargin=2 * cm)
     styles = getSampleStyleSheet()
-    title_style = ParagraphStyle("TitleRu", parent=styles["Heading1"], fontSize=16, spaceAfter=12)
-    h2 = styles["Heading2"]
-    body = styles["BodyText"]
+    title_style = ParagraphStyle(
+        "TitleRu", parent=styles["Heading1"], fontName=font_name, fontSize=16, spaceAfter=12
+    )
+    h2 = ParagraphStyle("HeadingRu", parent=styles["Heading2"], fontName=font_name)
+    body = ParagraphStyle("BodyRu", parent=styles["BodyText"], fontName=font_name)
 
     story = []
     story.append(Paragraph("Отчёт по практике: распознавание блюд", title_style))
@@ -132,6 +167,7 @@ def generate_pdf():
                 ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
                 ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
                 ("FONTSIZE", (0, 0), (-1, -1), 9),
+                ("FONTNAME", (0, 0), (-1, -1), font_name),
             ]
         )
     )
