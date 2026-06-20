@@ -14,7 +14,7 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, Tabl
 
 from app.config import BASE_DIR
 from app.database import get_history, get_statistics
-from app.models import load_confusion_matrix, load_experiments
+from app.models import get_model_name, load_confusion_matrix, load_experiments
 
 
 def _register_cyrillic_font():
@@ -87,7 +87,7 @@ def generate_excel():
             [
                 row["id"],
                 row["filename"],
-                row["model_id"],
+                get_model_name(row["model_id"]),
                 row["top1_class"],
                 row["top1_confidence"],
                 row["inference_ms"],

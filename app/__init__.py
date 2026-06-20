@@ -18,7 +18,12 @@ def create_app():
     os.makedirs(UPLOAD_DIR, exist_ok=True)
     init_db()
 
+    from app.models import get_model_name
     from app.routes import bp
+
+    @app.template_filter("model_name")
+    def model_name_filter(model_id):
+        return get_model_name(model_id)
 
     app.register_blueprint(bp)
     return app

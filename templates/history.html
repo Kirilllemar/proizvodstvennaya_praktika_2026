@@ -40,7 +40,7 @@
       <td><img src="{{ url_for('static', filename='uploads/' + item.filename) }}" width="48" height="48" style="object-fit:cover;border-radius:6px" alt=""></td>
       <td>{{ item.top1_class }}</td>
       <td>{{ (item.top1_confidence * 100)|round(1) }}%</td>
-      <td>{{ item.model_id }}</td>
+      <td>{{ item.model_id|model_name }}</td>
       <td>{{ item.inference_ms }} мс</td>
       <td>{{ item.created_at }}</td>
     </tr>

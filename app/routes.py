@@ -13,7 +13,14 @@ from flask import (
 
 from app.config import ALLOWED_EXTENSIONS, UPLOAD_DIR
 from app.database import get_history, get_statistics, save_prediction
-from app.models import compare_all_models, load_confusion_matrix, load_experiments, predict
+from app.models import (
+    compare_all_models,
+    get_model_name,
+    load_confusion_matrix,
+    load_experiments,
+    predict,
+    predict_multi_dishes,
+)
 from app.reports import generate_excel, generate_pdf, save_history_json
 
 bp = Blueprint("main", __name__)
@@ -41,11 +48,13 @@ def recognize():
     experiments = load_experiments()
     result = None
     compare_result = None
+    multi_result = None
     uploaded_name = None
 
     if request.method == "POST":
         model_id = request.form.get("model_id", experiments["best_model"])
         compare_all = request.form.get("compare_all") == "on"
+        multi_dishes = request.form.get("multi_dishes") == "on"
         file = request.files.get("image")
 
         if not file or file.filename == "":
@@ -69,13 +78,26 @@ def recognize():
         else:
             top3, ms = predict(path, model_id)
             save_prediction(uploaded_name, model_id, top3, ms)
-            result = {"top3": top3, "inference_ms": ms, "model_id": model_id}
+            result = {
+                "top3": top3,
+                "inference_ms": ms,
+                "model_id": model_id,
+                "model_name": get_model_name(model_id),
+            }
+            if multi_dishes:
+                dishes, multi_ms = predict_multi_dishes(path, model_id)
+                multi_result = {
+                    "dishes": dishes,
+                    "inference_ms": multi_ms,
+                    "model_name": get_model_name(model_id),
+                }
 
     return render_template(
         "recognize.html",
         experiments=experiments,
         result=result,
         compare_result=compare_result,
+        multi_result=multi_result,
         uploaded_name=uploaded_name,
     )
 

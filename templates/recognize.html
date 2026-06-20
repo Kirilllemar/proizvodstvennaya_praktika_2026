@@ -2,7 +2,7 @@
 {% block title %}Распознать — FoodVision{% endblock %}
 {% block content %}
 <h1>Распознавание блюда</h1>
-<p class="subtitle">Загрузите фото — получите top-3 класса с уверенностью модели</p>
+<p class="subtitle">Загрузите фото — получите топ-3 класса с уверенностью модели (все подписи на русском)</p>
 
 <div class="card">
   <form method="post" enctype="multipart/form-data">
@@ -28,6 +28,15 @@
       </label>
     </div>
 
+    <div class="form-group">
+      <label>
+        <input type="checkbox" name="multi_dishes"> Искать несколько блюд на фото (сканирование областей 3×3)
+      </label>
+      <p class="hint" style="margin-top:0.35rem;color:var(--muted);font-size:0.9rem">
+        Приблизительный режим: фото делится на 9 частей, в каждой ищется блюдо. Для точного выделения каждого блюда нужна модель детекции объектов (YOLO).
+      </p>
+    </div>
+
     <button type="submit" class="btn btn-primary">Распознать</button>
   </form>
 </div>
@@ -38,8 +47,8 @@
   <div style="display:flex;gap:2rem;flex-wrap:wrap;align-items:flex-start">
     <img class="result-image" src="{{ url_for('static', filename='uploads/' + uploaded_name) }}" alt="Загруженное фото">
     <div style="flex:1;min-width:240px">
-      <p><span class="tag">{{ result.model_id }}</span> · {{ result.inference_ms }} мс</p>
-      <h2 style="margin-top:1rem">Top-3 предсказания</h2>
+      <p><span class="tag">{{ result.model_name }}</span> · {{ result.inference_ms }} мс</p>
+      <h2 style="margin-top:1rem">Топ-3 предсказания</h2>
       {% for pred in result.top3 %}
       <div class="prediction-bar">
         <div class="label-row">
@@ -56,6 +65,33 @@
 </div>
 {% endif %}
 
+{% if multi_result %}
+<div class="card">
+  <h2>Несколько блюд на фото</h2>
+  <p><span class="tag">{{ multi_result.model_name }}</span> · {{ multi_result.inference_ms }} мс (9 областей)</p>
+  {% if multi_result.dishes %}
+  <table>
+    <tr>
+      <th>#</th>
+      <th>Блюдо</th>
+      <th>Уверенность</th>
+      <th>Области</th>
+    </tr>
+    {% for dish in multi_result.dishes %}
+    <tr>
+      <td>{{ loop.index }}</td>
+      <td>{{ dish.class }}</td>
+      <td>{{ (dish.confidence * 100)|round(1) }}%</td>
+      <td>{{ dish.regions }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p style="color:var(--muted)">Не удалось уверенно выделить отдельные блюда. Попробуйте крупный план одного блюда или другое фото.</p>
+  {% endif %}
+</div>
+{% endif %}
+
 {% if compare_result %}
 <div class="card">
   <h2>Сравнение всех моделей</h2>
@@ -63,7 +99,7 @@
   <table>
     <tr>
       <th>Модель</th>
-      <th>Top-1</th>
+      <th>Топ-1</th>
       <th>Уверенность</th>
       <th>Время (мс)</th>
     </tr>

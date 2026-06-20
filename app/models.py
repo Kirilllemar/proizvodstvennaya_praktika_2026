@@ -12,7 +12,13 @@ from torchvision.models import (
     ResNet50_Weights,
 )
 
-from app.config import CONFUSION_PATH, EXPERIMENTS_PATH, FOOD_CLASSES_RU
+from app.config import (
+    CONFUSION_PATH,
+    EXPERIMENTS_PATH,
+    FOOD_CLASSES_RU,
+    MODEL_NAMES_RU,
+    NON_FOOD_IMAGENET,
+)
 
 _transform = transforms.Compose(
     [
@@ -43,10 +49,20 @@ def _get_food_indices():
         indices = {}
         for idx, name in enumerate(labels):
             key = name.lower()
+            if key in NON_FOOD_IMAGENET:
+                continue
             if key in FOOD_CLASSES_RU:
                 indices[idx] = FOOD_CLASSES_RU[key]
         _food_indices = indices
     return _food_indices
+
+
+def get_model_name(model_id):
+    experiments = load_experiments()
+    for arch in experiments["architectures"]:
+        if arch["id"] == model_id:
+            return arch["name"]
+    return MODEL_NAMES_RU.get(model_id, model_id)
 
 
 def _build_model(model_id):
@@ -72,39 +88,102 @@ def get_model(model_id):
     return _model_cache[model_id]
 
 
+def _infer_probs(model, image):
+    tensor = _transform(image).unsqueeze(0)
+    with torch.no_grad():
+        outputs = model(tensor)
+        return torch.nn.functional.softmax(outputs[0], dim=0)
+
+
+def _food_top_k(probs, top_k=3):
+    food_indices = _get_food_indices()
+    food_probs = [
+        (ru_name, float(probs[idx].item())) for idx, ru_name in food_indices.items()
+    ]
+    food_probs.sort(key=lambda x: x[1], reverse=True)
+
+    if not food_probs:
+        return [{"class": "блюдо не распознано", "confidence": 0.0}]
+
+    return [
+        {"class": name, "confidence": round(conf, 4)}
+        for name, conf in food_probs[:top_k]
+    ]
+
+
 def predict(image_path, model_id="efficientnet_b0", top_k=3):
     model = get_model(model_id)
     image = Image.open(image_path).convert("RGB")
-    tensor = _transform(image).unsqueeze(0)
 
     start = time.perf_counter()
-    with torch.no_grad():
-        outputs = model(tensor)
-        probs = torch.nn.functional.softmax(outputs[0], dim=0)
+    probs = _infer_probs(model, image)
     inference_ms = (time.perf_counter() - start) * 1000
 
-    food_indices = _get_food_indices()
-    food_probs = []
-    for idx, ru_name in food_indices.items():
-        food_probs.append((ru_name, float(probs[idx].item())))
-
-    food_probs.sort(key=lambda x: x[1], reverse=True)
-
-    if not food_probs or food_probs[0][1] < 0.01:
-        labels = _load_imagenet_labels()
-        top_vals, top_idxs = torch.topk(probs, top_k)
-        results = []
-        for prob, idx in zip(top_vals, top_idxs):
-            en = labels[idx].lower()
-            ru = FOOD_CLASSES_RU.get(en, labels[idx])
-            results.append({"class": ru, "confidence": round(float(prob), 4)})
-    else:
-        results = [
-            {"class": name, "confidence": round(conf, 4)}
-            for name, conf in food_probs[:top_k]
-        ]
-
+    results = _food_top_k(probs, top_k)
     return results, round(inference_ms, 1)
+
+
+def predict_from_image(image, model_id="efficientnet_b0", top_k=1):
+    model = get_model(model_id)
+    start = time.perf_counter()
+    probs = _infer_probs(model, image)
+    inference_ms = (time.perf_counter() - start) * 1000
+    return _food_top_k(probs, top_k), round(inference_ms, 1)
+
+
+def predict_multi_dishes(
+    image_path,
+    model_id="efficientnet_b0",
+    grid=3,
+    min_confidence=0.001,
+    max_dishes=8,
+):
+    """Приблизительный поиск нескольких блюд: сканирование областей 3×3."""
+    image = Image.open(image_path).convert("RGB")
+    width, height = image.size
+    cell_w = max(width // grid, 1)
+    cell_h = max(height // grid, 1)
+
+    aggregated = {}
+    total_ms = 0.0
+
+    for row in range(grid):
+        for col in range(grid):
+            left = col * cell_w
+            top = row * cell_h
+            right = width if col == grid - 1 else left + cell_w
+            bottom = height if row == grid - 1 else top + cell_h
+            crop = image.crop((left, top, right, bottom))
+            top1, ms = predict_from_image(crop, model_id, top_k=1)
+            total_ms += ms
+            if not top1:
+                continue
+            pred = top1[0]
+            if pred["confidence"] < min_confidence:
+                continue
+            name = pred["class"]
+            if name == "блюдо не распознано":
+                continue
+            region = f"область {row + 1}×{col + 1}"
+            if name in aggregated:
+                aggregated[name]["confidence"] = max(
+                    aggregated[name]["confidence"], pred["confidence"]
+                )
+                aggregated[name]["regions"].append(region)
+            else:
+                aggregated[name] = {
+                    "class": name,
+                    "confidence": pred["confidence"],
+                    "regions": [region],
+                }
+
+    dishes = sorted(aggregated.values(), key=lambda x: x["confidence"], reverse=True)
+    dishes = dishes[:max_dishes]
+    for dish in dishes:
+        dish["confidence"] = round(dish["confidence"], 4)
+        dish["regions"] = ", ".join(dish["regions"])
+
+    return dishes, round(total_ms, 1)
 
 
 def compare_all_models(image_path):
