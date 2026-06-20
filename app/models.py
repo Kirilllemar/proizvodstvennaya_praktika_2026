@@ -13,13 +13,17 @@ from torchvision.models import (
 )
 
 from app.config import (
+    BURRITO_INDEX,
     CONFUSION_PATH,
     DISH_GROUPS,
     EXPERIMENTS_PATH,
     GROUPED_IMAGENET_INDICES,
     IMAGENET_FOOD_RU,
+    MIN_CONFIDENCE,
     MODEL_NAMES_RU,
     NON_FOOD_IMAGENET,
+    SEAFOOD_INDICES,
+    SUSHI_RICE_VEG_INDICES,
 )
 
 _transform = transforms.Compose(
@@ -44,6 +48,55 @@ def _get_food_indices():
             if idx not in NON_FOOD_IMAGENET
         }
     return _food_indices
+
+
+def _prob(probs, idx):
+    if idx >= len(probs):
+        return 0.0
+    return float(probs[idx])
+
+
+def _compute_dish_scores(probs):
+    scores = {}
+
+    for dish_name, weighted_indices in DISH_GROUPS.items():
+        score = sum(_prob(probs, idx) * weight for idx, weight in weighted_indices)
+        if score > 0:
+            scores[dish_name] = score
+
+    seafood = sum(_prob(probs, idx) * 3.0 for idx in SEAFOOD_INDICES)
+    rice_veg = sum(_prob(probs, idx) * 2.0 for idx in SUSHI_RICE_VEG_INDICES)
+    burrito = _prob(probs, BURRITO_INDEX)
+    has_sushi_signals = seafood > 0.008 or rice_veg > 0.04
+
+    if has_sushi_signals:
+        scores["Суши"] = seafood + rice_veg + burrito * 1.2
+        scores["Роллы"] = burrito * 0.15
+        scores.pop("Буррито", None)
+    elif burrito > 0.15:
+        scores["Буррито"] = burrito * 2.0
+        scores["Роллы"] = burrito * 0.8
+        scores.pop("Суши", None)
+    else:
+        scores["Роллы"] = burrito * 1.5 + _prob(probs, 931) + _prob(probs, 932)
+
+    steak = scores.get("Стейк", 0)
+    soup = scores.get("Суп", 0)
+    meat = _prob(probs, 962)
+    if meat > 0.004 or steak > 0.02:
+        scores["Стейк"] = max(steak, meat * 3.5)
+        scores["Суп"] = soup * 0.12
+    elif soup > 0.05:
+        scores.pop("Стейк", None)
+
+    for idx, ru_name in _get_food_indices().items():
+        if idx in GROUPED_IMAGENET_INDICES:
+            continue
+        prob = _prob(probs, idx)
+        if prob > 0:
+            scores[ru_name] = scores.get(ru_name, 0) + prob
+
+    return scores
 
 
 def get_model_name(model_id):
@@ -85,29 +138,21 @@ def _infer_probs(model, image):
 
 
 def _food_top_k(probs, top_k=3):
-    scores = {}
-
-    for dish_name, indices in DISH_GROUPS.items():
-        score = sum(float(probs[idx]) for idx in indices if idx < len(probs))
-        if score > 0:
-            scores[dish_name] = score
-
-    for idx, ru_name in _get_food_indices().items():
-        if idx in GROUPED_IMAGENET_INDICES:
-            continue
-        prob = float(probs[idx])
-        if prob > 0:
-            scores[ru_name] = scores.get(ru_name, 0) + prob
-
+    scores = _compute_dish_scores(probs)
     ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)
 
     if not ranked:
         return [{"class": "блюдо не распознано", "confidence": 0.0}]
 
-    return [
+    results = [
         {"class": name, "confidence": round(conf, 4)}
         for name, conf in ranked[:top_k]
     ]
+
+    if results[0]["confidence"] < MIN_CONFIDENCE:
+        results[0]["class"] = f"{results[0]['class']} (низкая уверенность)"
+
+    return results
 
 
 def predict(image_path, model_id="efficientnet_b0", top_k=3):
@@ -137,7 +182,6 @@ def predict_multi_dishes(
     min_confidence=0.001,
     max_dishes=8,
 ):
-    """Приблизительный поиск нескольких блюд: сканирование областей 3×3."""
     image = Image.open(image_path).convert("RGB")
     width, height = image.size
     cell_w = max(width // grid, 1)
@@ -160,7 +204,7 @@ def predict_multi_dishes(
             pred = top1[0]
             if pred["confidence"] < min_confidence:
                 continue
-            name = pred["class"]
+            name = pred["class"].replace(" (низкая уверенность)", "")
             if name == "блюдо не распознано":
                 continue
             region = f"область {row + 1}×{col + 1}"
@@ -199,6 +243,13 @@ def compare_all_models(image_path):
             }
         )
     return comparisons
+
+
+def best_compare_result(comparisons, best_model_id="efficientnet_b0"):
+    for item in comparisons:
+        if item["model_id"] == best_model_id:
+            return item
+    return max(comparisons, key=lambda x: x["top3"][0]["confidence"])
 
 
 def load_experiments():

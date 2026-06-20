@@ -14,6 +14,7 @@ from flask import (
 from app.config import ALLOWED_EXTENSIONS, DISH_GROUPS_CATALOG, FOOD_CLASSES_CATALOG, UPLOAD_DIR
 from app.database import clear_history, delete_prediction, get_history, get_statistics, save_prediction
 from app.models import (
+    best_compare_result,
     compare_all_models,
     get_model_name,
     load_confusion_matrix,
@@ -80,9 +81,8 @@ def recognize():
 
         if compare_all:
             compare_result = compare_all_models(path)
-            top3 = compare_result[0]["top3"]
-            ms = compare_result[0]["inference_ms"]
-            save_prediction(uploaded_name, "all_models", top3, ms)
+            best = best_compare_result(compare_result, experiments["best_model"])
+            save_prediction(uploaded_name, "all_models", best["top3"], best["inference_ms"])
         else:
             top3, ms = predict(path, model_id)
             save_prediction(uploaded_name, model_id, top3, ms)
