@@ -14,7 +14,9 @@ from torchvision.models import (
 
 from app.config import (
     CONFUSION_PATH,
+    DISH_GROUPS,
     EXPERIMENTS_PATH,
+    GROUPED_IMAGENET_INDICES,
     IMAGENET_FOOD_RU,
     MODEL_NAMES_RU,
     NON_FOOD_IMAGENET,
@@ -83,18 +85,28 @@ def _infer_probs(model, image):
 
 
 def _food_top_k(probs, top_k=3):
-    food_indices = _get_food_indices()
-    food_probs = [
-        (ru_name, float(probs[idx].item())) for idx, ru_name in food_indices.items()
-    ]
-    food_probs.sort(key=lambda x: x[1], reverse=True)
+    scores = {}
 
-    if not food_probs:
+    for dish_name, indices in DISH_GROUPS.items():
+        score = sum(float(probs[idx]) for idx in indices if idx < len(probs))
+        if score > 0:
+            scores[dish_name] = score
+
+    for idx, ru_name in _get_food_indices().items():
+        if idx in GROUPED_IMAGENET_INDICES:
+            continue
+        prob = float(probs[idx])
+        if prob > 0:
+            scores[ru_name] = scores.get(ru_name, 0) + prob
+
+    ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+
+    if not ranked:
         return [{"class": "блюдо не распознано", "confidence": 0.0}]
 
     return [
         {"class": name, "confidence": round(conf, 4)}
-        for name, conf in food_probs[:top_k]
+        for name, conf in ranked[:top_k]
     ]
 
 

@@ -13,7 +13,7 @@ FOOD_CLASSES_CATALOG = [
     {"index": 924, "en": "guacamole", "ru": "Гуакамоле", "desc": "Соус из авокадо"},
     {"index": 925, "en": "consomme", "ru": "Мясной бульон", "desc": "Прозрачный консоме"},
     {"index": 926, "en": "hot pot", "ru": "Мясной суп с овощами", "desc": "Тушёное мясо с овощами в бульоне"},
-    {"index": 927, "en": "trifle", "ru": "Слоёный десерт", "desc": "Десерт с фруктами и сливками"},
+    {"index": 927, "en": "trifle", "ru": "Слоёный десерт", "desc": "В распознавании объединяется в группу «Торт»"},
     {"index": 928, "en": "ice cream", "ru": "Мороженое", "desc": "Мороженое в чаше или рожке"},
     {"index": 929, "en": "ice lolly", "ru": "Мороженое на палочке", "desc": "Эскимо, фруктовый лед"},
     {"index": 930, "en": "French loaf", "ru": "Батон", "desc": "Белый хлеб"},
@@ -33,7 +33,7 @@ FOOD_CLASSES_CATALOG = [
     {"index": 944, "en": "artichoke", "ru": "Артишок", "desc": "Артишок"},
     {"index": 945, "en": "bell pepper", "ru": "Болгарский перец", "desc": "Сладкий перец"},
     {"index": 946, "en": "cardoon", "ru": "Кардон", "desc": "Стеблевой овощ"},
-    {"index": 947, "en": "mushroom", "ru": "Грибы", "desc": "Съедобные грибы"},
+    {"index": 947, "en": "mushroom", "ru": "Грибы", "desc": "Объединяется с agaric, bolete и др."},
     {"index": 948, "en": "Granny Smith", "ru": "Яблоко", "desc": "Зелёное яблоко"},
     {"index": 949, "en": "strawberry", "ru": "Клубника", "desc": "Свежая клубника"},
     {"index": 950, "en": "orange", "ru": "Апельсин", "desc": "Апельсин"},
@@ -62,6 +62,39 @@ FOOD_CLASSES_CATALOG = [
 ]
 
 IMAGENET_FOOD_RU = {item["index"]: item["ru"] for item in FOOD_CLASSES_CATALOG}
+
+# Группы блюд: суммируем вероятности нескольких классов ImageNet.
+# Нужно, потому что в ImageNet нет «суши», «роллов», «торта» как отдельных классов.
+DISH_GROUPS = {
+    "Грибы": [947, 992, 997, 991, 993],
+    "Торт": [927, 415, 960, 961],
+    "Суши": [390, 122, 118, 119, 120, 121, 123, 124, 125, 393, 396, 935, 943],
+    "Роллы": [965, 931, 932],
+    "Пицца": [963],
+    "Бургер": [933],
+    "Стейк": [962],
+    "Паста": [959],
+    "Пирог": [964],
+    "Мороженое": [928, 929],
+    "Хот-дог": [934],
+    "Кофе": [967],
+}
+
+DISH_GROUPS_CATALOG = [
+    {"ru": "Грибы", "desc": "mushroom, agaric, bolete и др. виды грибов в ImageNet"},
+    {"ru": "Торт", "desc": "trifle, bakery, шоколад — ближайшие классы для торта и выпечки"},
+    {"ru": "Суши", "desc": "морепродукты, рыба, рис (mashed potato), огурец — типичные признаки суши"},
+    {"ru": "Роллы", "desc": "burrito, hotdog, bagel — цилиндрические блюда, похожие на роллы"},
+    {"ru": "Пицца", "desc": "класс pizza"},
+    {"ru": "Бургер", "desc": "класс cheeseburger"},
+    {"ru": "Стейк", "desc": "класс meat loaf (жареное мясо в ImageNet)"},
+    {"ru": "Паста", "desc": "класс carbonara"},
+    {"ru": "Пирог", "desc": "класс potpie"},
+    {"ru": "Мороженое", "desc": "ice cream, ice lolly"},
+    {"ru": "Кофе", "desc": "класс espresso"},
+]
+
+GROUPED_IMAGENET_INDICES = {idx for indices in DISH_GROUPS.values() for idx in indices}
 
 # Индексы ImageNet, которые не являются едой (посуда, меню, стол и т.п.)
 NON_FOOD_IMAGENET = {

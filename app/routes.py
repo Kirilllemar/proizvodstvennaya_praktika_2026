@@ -11,7 +11,7 @@ from flask import (
     url_for,
 )
 
-from app.config import ALLOWED_EXTENSIONS, FOOD_CLASSES_CATALOG, UPLOAD_DIR
+from app.config import ALLOWED_EXTENSIONS, DISH_GROUPS_CATALOG, FOOD_CLASSES_CATALOG, UPLOAD_DIR
 from app.database import clear_history, delete_prediction, get_history, get_statistics, save_prediction
 from app.models import (
     compare_all_models,
@@ -156,6 +156,7 @@ def about():
         "about.html",
         experiments=experiments,
         food_classes=FOOD_CLASSES_CATALOG,
+        dish_groups=DISH_GROUPS_CATALOG,
     )
 
 

@@ -1,0 +1,14 @@
+[
+  {"ru": "Грибы", "desc": "mushroom, agaric, bolete и др. виды грибов в ImageNet"},
+  {"ru": "Торт", "desc": "trifle, bakery, шоколад — ближайшие классы для торта и выпечки"},
+  {"ru": "Суши", "desc": "морепродукты, рыба, рис (mashed potato), огурец — типичные признаки суши"},
+  {"ru": "Роллы", "desc": "burrito, bagel, pretzel — цилиндрические блюда, похожие на роллы"},
+  {"ru": "Пицца", "desc": "класс pizza"},
+  {"ru": "Бургер", "desc": "класс cheeseburger"},
+  {"ru": "Стейк", "desc": "класс meat loaf (жареное мясо в ImageNet)"},
+  {"ru": "Паста", "desc": "класс carbonara"},
+  {"ru": "Пирог", "desc": "класс potpie"},
+  {"ru": "Мороженое", "desc": "ice cream, ice lolly"},
+  {"ru": "Хот-дог", "desc": "класс hotdog"},
+  {"ru": "Кофе", "desc": "класс espresso"}
+]
