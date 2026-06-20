@@ -7,85 +7,75 @@ DB_PATH = os.path.join(BASE_DIR, "data", "history.db")
 EXPERIMENTS_PATH = os.path.join(DATA_DIR, "experiments.json")
 CONFUSION_PATH = os.path.join(DATA_DIR, "confusion_matrix.json")
 
-# Классы ImageNet, связанные с едой (индексы ~924–969), и доп. подписи для отчётов.
-FOOD_CLASSES_RU = {
-    "guacamole": "гуакамоле",
-    "consomme": "консоме",
-    "hot pot": "хот-пот",
-    "trifle": "трайфл",
-    "ice cream": "мороженое",
-    "ice lolly": "эскимо",
-    "french loaf": "батон",
-    "bagel": "бейгл",
-    "pretzel": "крендель",
-    "cheeseburger": "чизбургер",
-    "hotdog": "хот-дог",
-    "hot dog": "хот-дог",
-    "mashed potato": "картофельное пюре",
-    "head cabbage": "капуста",
-    "broccoli": "брокколи",
-    "cauliflower": "цветная капуста",
-    "zucchini": "кабачок",
-    "spaghetti squash": "тыква-спагетти",
-    "acorn squash": "тыква",
-    "butternut squash": "тыква мускатная",
-    "cucumber": "огурец",
-    "artichoke": "артишок",
-    "bell pepper": "болгарский перец",
-    "cardoon": "кардон",
-    "mushroom": "грибы",
-    "granny smith": "яблоко",
-    "strawberry": "клубника",
-    "orange": "апельсин",
-    "lemon": "лимон",
-    "fig": "инжир",
-    "pineapple": "ананас",
-    "banana": "банан",
-    "jackfruit": "джекфрут",
-    "custard apple": "черимойя",
-    "pomegranate": "гранат",
-    "carbonara": "карбонара",
-    "chocolate sauce": "шоколадный соус",
-    "dough": "тесто",
-    "meat loaf": "мясной рулет",
-    "pizza": "пицца",
-    "potpie": "пирог",
-    "burrito": "буррито",
-    "red wine": "красное вино",
-    "espresso": "эспрессо",
-    "eggnog": "эгг-ног",
-    "hamburger": "гамбургер",
-    "french fries": "картофель фри",
-    "chocolate cake": "шоколадный торт",
-    "carrot cake": "морковный торт",
-    "spaghetti bolognese": "спагетти",
-    "caesar salad": "салат цезарь",
-    "sushi": "суши",
-    "ramen": "рамен",
-    "donut": "пончик",
-    "waffle": "вафля",
-    "pancake": "блин",
-    "cappuccino": "капучино",
-    "beer": "пиво",
-    "croissant": "круассан",
-    "taco": "тако",
-    "steak": "стейк",
-    "lobster": "лобстер",
-    "oyster": "устрица",
-    "fried rice": "жареный рис",
+# Каталог пищевых классов ImageNet: индекс → русское название + пояснение.
+# Названия подобраны для понятного отображения в интерфейсе (без лишней транслитерации).
+FOOD_CLASSES_CATALOG = [
+    {"index": 924, "en": "guacamole", "ru": "Гуакамоле", "desc": "Соус из авокадо"},
+    {"index": 925, "en": "consomme", "ru": "Мясной бульон", "desc": "Прозрачный консоме"},
+    {"index": 926, "en": "hot pot", "ru": "Мясной суп с овощами", "desc": "Тушёное мясо с овощами в бульоне"},
+    {"index": 927, "en": "trifle", "ru": "Слоёный десерт", "desc": "Десерт с фруктами и сливками"},
+    {"index": 928, "en": "ice cream", "ru": "Мороженое", "desc": "Мороженое в чаше или рожке"},
+    {"index": 929, "en": "ice lolly", "ru": "Мороженое на палочке", "desc": "Эскимо, фруктовый лед"},
+    {"index": 930, "en": "French loaf", "ru": "Батон", "desc": "Белый хлеб"},
+    {"index": 931, "en": "bagel", "ru": "Бейгл", "desc": "Круглая булочка с отверстием"},
+    {"index": 932, "en": "pretzel", "ru": "Крендель", "desc": "Солёная выпечка"},
+    {"index": 933, "en": "cheeseburger", "ru": "Чизбургер", "desc": "Бургер с сыром"},
+    {"index": 934, "en": "hotdog", "ru": "Хот-дог", "desc": "Сосиска в булке"},
+    {"index": 935, "en": "mashed potato", "ru": "Картофельное пюре", "desc": "Пюре из картофеля"},
+    {"index": 936, "en": "head cabbage", "ru": "Капуста", "desc": "Белокочанная капуста"},
+    {"index": 937, "en": "broccoli", "ru": "Брокколи", "desc": "Капуста брокколи"},
+    {"index": 938, "en": "cauliflower", "ru": "Цветная капуста", "desc": "Капуста цветная"},
+    {"index": 939, "en": "zucchini", "ru": "Кабачок", "desc": "Кабачок, цукини"},
+    {"index": 940, "en": "spaghetti squash", "ru": "Тыква", "desc": "Овощная тыква (не паста)"},
+    {"index": 941, "en": "acorn squash", "ru": "Тыква", "desc": "Жёлтая тыква"},
+    {"index": 942, "en": "butternut squash", "ru": "Тыква мускатная", "desc": "Мускатная тыква"},
+    {"index": 943, "en": "cucumber", "ru": "Огурец", "desc": "Свежий огурец"},
+    {"index": 944, "en": "artichoke", "ru": "Артишок", "desc": "Артишок"},
+    {"index": 945, "en": "bell pepper", "ru": "Болгарский перец", "desc": "Сладкий перец"},
+    {"index": 946, "en": "cardoon", "ru": "Кардон", "desc": "Стеблевой овощ"},
+    {"index": 947, "en": "mushroom", "ru": "Грибы", "desc": "Съедобные грибы"},
+    {"index": 948, "en": "Granny Smith", "ru": "Яблоко", "desc": "Зелёное яблоко"},
+    {"index": 949, "en": "strawberry", "ru": "Клубника", "desc": "Свежая клубника"},
+    {"index": 950, "en": "orange", "ru": "Апельсин", "desc": "Апельсин"},
+    {"index": 951, "en": "lemon", "ru": "Лимон", "desc": "Лимон"},
+    {"index": 952, "en": "fig", "ru": "Инжир", "desc": "Инжир"},
+    {"index": 953, "en": "pineapple", "ru": "Ананас", "desc": "Ананас"},
+    {"index": 954, "en": "banana", "ru": "Банан", "desc": "Банан"},
+    {"index": 955, "en": "jackfruit", "ru": "Джекфрут", "desc": "Джекфрут"},
+    {"index": 956, "en": "custard apple", "ru": "Черимойя", "desc": "Фрукт черимойя"},
+    {"index": 957, "en": "pomegranate", "ru": "Гранат", "desc": "Гранат"},
+    {"index": 959, "en": "carbonara", "ru": "Спагетти карбонара", "desc": "Паста с беконом и сыром"},
+    {"index": 960, "en": "chocolate sauce", "ru": "Шоколадный соус", "desc": "Шоколадная глазурь или соус"},
+    {"index": 961, "en": "dough", "ru": "Тесто", "desc": "Сырое или готовое тесто"},
+    {
+        "index": 962,
+        "en": "meat loaf",
+        "ru": "Стейк",
+        "desc": "Жареное мясо; в ImageNet нет отдельного класса «steak»",
+    },
+    {"index": 963, "en": "pizza", "ru": "Пицца", "desc": "Пицца"},
+    {"index": 964, "en": "potpie", "ru": "Пирог", "desc": "Пирог с начинкой"},
+    {"index": 965, "en": "burrito", "ru": "Буррито", "desc": "Мексиканская лепёшка с начинкой"},
+    {"index": 966, "en": "red wine", "ru": "Красное вино", "desc": "Красное вино"},
+    {"index": 967, "en": "espresso", "ru": "Эспрессо", "desc": "Кофе эспрессо"},
+    {"index": 969, "en": "eggnog", "ru": "Яичный коктейль", "desc": "Молочный напиток с яйцом и специями"},
+]
+
+IMAGENET_FOOD_RU = {item["index"]: item["ru"] for item in FOOD_CLASSES_CATALOG}
+
+# Индексы ImageNet, которые не являются едой (посуда, меню, стол и т.п.)
+NON_FOOD_IMAGENET = {
+    920,  # traffic light
+    921,  # book jacket
+    922,  # menu
+    923,  # plate
+    958,  # hay
+    968,  # cup
+    970,  # alp
+    971,  # bubble
 }
 
-# Не показывать как блюда (стол, посуда, меню и т.п.)
-NON_FOOD_IMAGENET = {
-    "plate",
-    "menu",
-    "cup",
-    "book jacket",
-    "traffic light",
-    "hay",
-    "dining table",
-    "table",
-}
+FOOD_CLASSES_RU = {item["en"]: item["ru"] for item in FOOD_CLASSES_CATALOG}
 
 MODEL_NAMES_RU = {
     "resnet18": "ResNet-18",

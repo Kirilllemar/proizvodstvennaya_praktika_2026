@@ -11,7 +11,7 @@ from flask import (
     url_for,
 )
 
-from app.config import ALLOWED_EXTENSIONS, UPLOAD_DIR
+from app.config import ALLOWED_EXTENSIONS, FOOD_CLASSES_CATALOG, UPLOAD_DIR
 from app.database import clear_history, delete_prediction, get_history, get_statistics, save_prediction
 from app.models import (
     compare_all_models,
@@ -152,7 +152,11 @@ def history_clear():
 @bp.route("/about")
 def about():
     experiments = load_experiments()
-    return render_template("about.html", experiments=experiments)
+    return render_template(
+        "about.html",
+        experiments=experiments,
+        food_classes=FOOD_CLASSES_CATALOG,
+    )
 
 
 @bp.route("/export/excel")

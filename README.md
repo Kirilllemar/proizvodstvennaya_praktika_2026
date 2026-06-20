@@ -80,6 +80,7 @@ FOODVISION_PORT=8080 python run.py
 | Метрики (Acc, P, R, F1) | Таблица сравнения |
 | Confusion Matrix | `/confusion` |
 | Демо: фото → топ-3 на русском + уверенность | `/recognize` |
+| Справочник 44 классов (EN → RU) | `/about`, `data/food_classes_ru.json` |
 | Поиск нескольких блюд (сетка 3×3) | `/recognize` (чекбокс) |
 | PDF с кириллицей | `static/fonts/DejaVuSans.ttf` |
 | История запусков | SQLite, `/history` |

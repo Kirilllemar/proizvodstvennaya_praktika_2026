@@ -15,7 +15,7 @@ from torchvision.models import (
 from app.config import (
     CONFUSION_PATH,
     EXPERIMENTS_PATH,
-    FOOD_CLASSES_RU,
+    IMAGENET_FOOD_RU,
     MODEL_NAMES_RU,
     NON_FOOD_IMAGENET,
 )
@@ -30,30 +30,17 @@ _transform = transforms.Compose(
 )
 
 _model_cache = {}
-_imagenet_labels = None
 _food_indices = None
-
-
-def _load_imagenet_labels():
-    global _imagenet_labels
-    if _imagenet_labels is None:
-        weights = EfficientNet_B0_Weights.DEFAULT
-        _imagenet_labels = weights.meta["categories"]
-    return _imagenet_labels
 
 
 def _get_food_indices():
     global _food_indices
     if _food_indices is None:
-        labels = _load_imagenet_labels()
-        indices = {}
-        for idx, name in enumerate(labels):
-            key = name.lower()
-            if key in NON_FOOD_IMAGENET:
-                continue
-            if key in FOOD_CLASSES_RU:
-                indices[idx] = FOOD_CLASSES_RU[key]
-        _food_indices = indices
+        _food_indices = {
+            idx: ru_name
+            for idx, ru_name in IMAGENET_FOOD_RU.items()
+            if idx not in NON_FOOD_IMAGENET
+        }
     return _food_indices
 
 
