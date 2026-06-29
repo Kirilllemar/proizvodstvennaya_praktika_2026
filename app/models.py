@@ -57,46 +57,82 @@ def _prob(probs, idx):
 
 
 def _compute_dish_scores(probs):
-    scores = {}
+    """Возвращает (rank_scores, display_scores). Ранжирование — с весами, уверенность — 0..1."""
+    rank_scores = {}
+    display_scores = {}
+
+    def _add(name, raw, weighted):
+        if raw > 0 or weighted > 0:
+            display_scores[name] = min(1.0, raw)
+            rank_scores[name] = weighted
 
     for dish_name, weighted_indices in DISH_GROUPS.items():
-        score = sum(_prob(probs, idx) * weight for idx, weight in weighted_indices)
-        if score > 0:
-            scores[dish_name] = score
+        raw = sum(_prob(probs, idx) for idx, _ in weighted_indices)
+        weighted = sum(_prob(probs, idx) * weight for idx, weight in weighted_indices)
+        _add(dish_name, raw, weighted)
 
-    seafood = sum(_prob(probs, idx) * 3.0 for idx in SEAFOOD_INDICES)
-    rice_veg = sum(_prob(probs, idx) * 2.0 for idx in SUSHI_RICE_VEG_INDICES)
+    seafood_raw = sum(_prob(probs, idx) for idx in SEAFOOD_INDICES)
+    rice_veg_raw = sum(_prob(probs, idx) for idx in SUSHI_RICE_VEG_INDICES)
     burrito = _prob(probs, BURRITO_INDEX)
-    has_sushi_signals = seafood > 0.008 or rice_veg > 0.04
+    seafood_rank = sum(_prob(probs, idx) * 3.0 for idx in SEAFOOD_INDICES)
+    rice_veg_rank = sum(_prob(probs, idx) * 2.0 for idx in SUSHI_RICE_VEG_INDICES)
+    has_sushi_signals = seafood_raw > 0.008 or rice_veg_raw > 0.04
 
     if has_sushi_signals:
-        scores["Суши"] = seafood + rice_veg + burrito * 1.2
-        scores["Роллы"] = burrito * 0.15
-        scores.pop("Буррито", None)
+        sushi_raw = min(1.0, seafood_raw + rice_veg_raw + burrito)
+        sushi_rank = seafood_rank + rice_veg_rank + burrito * 1.2
+        _add("Суши", sushi_raw, sushi_rank)
+        _add("Роллы", burrito * 0.5, burrito * 0.15)
+        display_scores.pop("Буррито", None)
+        rank_scores.pop("Буррито", None)
     elif burrito > 0.15:
-        scores["Буррито"] = burrito * 2.0
-        scores["Роллы"] = burrito * 0.8
-        scores.pop("Суши", None)
+        _add("Буррито", burrito, burrito * 2.0)
+        _add("Роллы", min(1.0, burrito + _prob(probs, 931)), burrito * 0.8)
+        display_scores.pop("Суши", None)
+        rank_scores.pop("Суши", None)
     else:
-        scores["Роллы"] = burrito * 1.5 + _prob(probs, 931) + _prob(probs, 932)
+        rolls_raw = min(1.0, burrito + _prob(probs, 931) + _prob(probs, 932))
+        rolls_rank = burrito * 1.5 + _prob(probs, 931) + _prob(probs, 932)
+        _add("Роллы", rolls_raw, rolls_rank)
 
-    steak = scores.get("Стейк", 0)
-    soup = scores.get("Суп", 0)
     meat = _prob(probs, 962)
-    if meat > 0.004 or steak > 0.02:
-        scores["Стейк"] = max(steak, meat * 3.5)
-        scores["Суп"] = soup * 0.12
-    elif soup > 0.05:
-        scores.pop("Стейк", None)
+    steak_raw = min(1.0, meat)
+    steak_rank = max(rank_scores.get("Стейк", 0), meat * 3.5)
+    soup_raw = display_scores.get("Суп", 0)
+    soup_rank = rank_scores.get("Суп", 0)
+
+    if meat > 0.004 or steak_rank > 0.02:
+        _add("Стейк", steak_raw, steak_rank)
+        if soup_raw > 0:
+            _add("Суп", soup_raw * 0.3, soup_rank * 0.12)
+    elif soup_raw > 0.05:
+        display_scores.pop("Стейк", None)
+        rank_scores.pop("Стейк", None)
 
     for idx, ru_name in _get_food_indices().items():
         if idx in GROUPED_IMAGENET_INDICES:
             continue
         prob = _prob(probs, idx)
         if prob > 0:
-            scores[ru_name] = scores.get(ru_name, 0) + prob
+            display_scores[ru_name] = min(1.0, display_scores.get(ru_name, 0) + prob)
+            rank_scores[ru_name] = rank_scores.get(ru_name, 0) + prob
 
-    return scores
+    return rank_scores, display_scores
+
+
+def _normalize_top_k(rank_scores, display_scores, top_k=3):
+    """Топ-K по rank_scores, уверенность — из display_scores (всегда 0..1)."""
+    ranked = sorted(rank_scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
+
+    if not ranked:
+        return [{"class": "блюдо не распознано", "confidence": 0.0}]
+
+    results = []
+    for name, _ in ranked:
+        conf = min(1.0, display_scores.get(name, 0.0))
+        results.append({"class": name, "confidence": round(conf, 4)})
+
+    return results
 
 
 def get_model_name(model_id):
@@ -138,16 +174,8 @@ def _infer_probs(model, image):
 
 
 def _food_top_k(probs, top_k=3):
-    scores = _compute_dish_scores(probs)
-    ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-
-    if not ranked:
-        return [{"class": "блюдо не распознано", "confidence": 0.0}]
-
-    results = [
-        {"class": name, "confidence": round(conf, 4)}
-        for name, conf in ranked[:top_k]
-    ]
+    rank_scores, display_scores = _compute_dish_scores(probs)
+    results = _normalize_top_k(rank_scores, display_scores, top_k)
 
     if results[0]["confidence"] < MIN_CONFIDENCE:
         results[0]["class"] = f"{results[0]['class']} (низкая уверенность)"
